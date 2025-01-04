@@ -1,6 +1,6 @@
+mod tree;
 use clap::Parser;
-use std::path::{Path, PathBuf};
-use std::{fs, usize};
+use std::path::Path;
 
 /// Tree, implimented in rust
 #[derive(Parser, Debug)]
@@ -13,6 +13,7 @@ struct Cli {
     #[arg(short, long)]
     depth: Option<usize>,
 
+    /// Show hidden files
     #[arg(short, long)]
     show_hidden: bool,
 }
@@ -35,48 +36,5 @@ fn run_tree(target_path: String, depth: Option<usize>, show_hidden: bool) {
         println!("Path: {:?} does not exist", this_path);
         std::process::exit(1);
     }
-
-    tree(this_path, 0, depth, show_hidden);
-}
-
-fn tree(path: &Path, curr_depth: usize, max_depth: Option<usize>, show_hidden: bool) {
-    if matches!(max_depth, Some(max) if curr_depth >= max) {
-        return;
-    }
-
-    let this_dir = match fs::read_dir(path) {
-        Ok(result) => result,
-        Err(err) => return,
-    };
-
-    let mut files: Vec<_> = this_dir.filter_map(Result::ok).collect();
-    let num_files = files.len();
-
-    for (i, file) in files.iter().enumerate() {
-        let file_path = file.path();
-
-        if !show_hidden {
-            if let Some(file_name) = file.file_name().to_str() {
-                if file_name.chars().next() == Some('.') {
-                    continue;
-                }
-            }
-        }
-
-        let is_last = i == num_files - 1;
-        let corner = if is_last { "└" } else { "├" };
-
-        println!(
-            "{} {} {}",
-            " ".repeat(2 * curr_depth),
-            corner,
-            file.file_name()
-                .to_str()
-                .expect("File name could not be parsed")
-        );
-
-        if file_path.is_dir() {
-            tree(&file_path, curr_depth + 1, max_depth, show_hidden);
-        }
-    }
+    tree::tree(this_path, 0, depth, show_hidden);
 }
